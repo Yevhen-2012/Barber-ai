@@ -5,7 +5,7 @@ services:
     name: barber-ai
     runtime: python
     plan: free
-    buildCommand: pip install -r requirements.txt
+    buildCommand: python3 -m pip install -r requirements.txt
     startCommand: python3 05-example_bot/bot.py
     envVars:
       # Версия Python (по желанию можно поменять)
