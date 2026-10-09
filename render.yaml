@@ -6,7 +6,7 @@ services:
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: python 05-example_bot/bot.py
+    startCommand: python3 05-example_bot/bot.py
     envVars:
       # Версия Python (по желанию можно поменять)
       - key: PYTHON_VERSION
