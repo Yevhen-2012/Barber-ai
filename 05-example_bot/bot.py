@@ -200,6 +200,26 @@ def _save_lead_to_db(name: str, service: str) -> int:
         conn.close()
 
 
+def verify_database_connection() -> None:
+    """Fail startup if configured persistent storage cannot be used."""
+    if not DATABASE_URL:
+        return
+    import psycopg2
+    conn = psycopg2.connect(DATABASE_URL, sslmode="require", connect_timeout=10)
+    try:
+        with conn, conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM public.example_bot_leads LIMIT 0")
+            cur.execute(
+                "SELECT has_table_privilege(current_user, %s, %s)",
+                ("public.example_bot_leads", "INSERT"),
+            )
+            if not cur.fetchone()[0]:
+                raise RuntimeError("The bot's database role cannot save bookings")
+        print("[CRM] Supabase storage connection verified (TLS, SELECT, INSERT).")
+    finally:
+        conn.close()
+
+
 def record_lead(name: str, service: str) -> str:
     # RU: есть база (на хостинге) — пишем в неё; иначе — в файл (локально)
     # EN: a DB is present (on the host) — write to it; otherwise — to a file (locally)
@@ -285,6 +305,7 @@ def chat(message, history):
 
 
 if __name__ == "__main__":
+    verify_database_connection()
     # RU: server_name/server_port — чтобы работало и локально, и на хостинге:
     #     хостинг (Render/Railway) сам передаёт порт в переменной PORT; локально её нет → 7860.
     # EN: server_name/server_port — so it works both locally and on a host:
