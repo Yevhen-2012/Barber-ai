@@ -184,22 +184,16 @@ def _save_lead_to_db(name: str, service: str) -> int:
     EN: save the booking to Postgres (on a host — survives restarts). Return the count.
     """
     import psycopg2  # RU: клиент Postgres (из requirements.txt) / EN: Postgres client (from requirements.txt)
-    conn = psycopg2.connect(DATABASE_URL)
+    conn = psycopg2.connect(DATABASE_URL, sslmode="require", connect_timeout=10)
     try:
         # RU: with conn — сам зафиксирует изменения (commit) при успехе
         # EN: with conn — auto-commits the changes on success
         with conn, conn.cursor() as cur:
-            # RU: таблица создаётся один раз, если её ещё нет
-            # EN: the table is created once, if it doesn't exist yet
-            cur.execute(
-                "CREATE TABLE IF NOT EXISTS leads ("
-                "id SERIAL PRIMARY KEY, name TEXT, service TEXT, "
-                "created_at TIMESTAMP DEFAULT NOW())"
-            )
+            # The table is provisioned separately; the bot cannot change the schema.
             # RU: %s — безопасная подстановка (защита от SQL-инъекций), НЕ f-строка
             # EN: %s — safe parameter substitution (SQL-injection safe), NOT an f-string
-            cur.execute("INSERT INTO leads (name, service) VALUES (%s, %s)", (name, service))
-            cur.execute("SELECT COUNT(*) FROM leads")
+            cur.execute("INSERT INTO public.example_bot_leads (name, service) VALUES (%s, %s)", (name, service))
+            cur.execute("SELECT COUNT(*) FROM public.example_bot_leads")
             total = cur.fetchone()[0]
         return total
     finally:
